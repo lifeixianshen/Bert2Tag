@@ -61,7 +61,7 @@ class CommonTestCases:
                                 "pad_token", "cls_token", "mask_token"]
             for attr in attributes_list:
                 self.assertTrue(hasattr(tokenizer, attr))
-                self.assertTrue(hasattr(tokenizer, attr + "_id"))
+                self.assertTrue(hasattr(tokenizer, f"{attr}_id"))
 
             self.assertTrue(hasattr(tokenizer, "additional_special_tokens"))
             self.assertTrue(hasattr(tokenizer, 'additional_special_tokens_ids'))
@@ -180,10 +180,10 @@ class CommonTestCases:
 
         def test_pretrained_model_lists(self):
             weights_list = list(self.tokenizer_class.max_model_input_sizes.keys())
-            weights_lists_2 = []
-            for file_id, map_list in self.tokenizer_class.pretrained_vocab_files_map.items():
-                weights_lists_2.append(list(map_list.keys()))
-
+            weights_lists_2 = [
+                list(map_list.keys())
+                for file_id, map_list in self.tokenizer_class.pretrained_vocab_files_map.items()
+            ]
             for weights_list_2 in weights_lists_2:
                 self.assertListEqual(weights_list, weights_list_2)
 
@@ -305,7 +305,7 @@ class CommonTestCases:
             self.assertEqual(encoded_sequence, filtered_sequence)
 
             # Testing with already existing special tokens
-            if tokenizer.cls_token_id == tokenizer.unk_token_id and tokenizer.cls_token_id == tokenizer.unk_token_id:
+            if tokenizer.cls_token_id == tokenizer.unk_token_id:
                 tokenizer.add_special_tokens({'cls_token': '</s>', 'sep_token': '<s>'})
             encoded_sequence_dict = tokenizer.encode_plus(sequence_0, add_special_tokens=True)
             encoded_sequence_w_special = encoded_sequence_dict["input_ids"]

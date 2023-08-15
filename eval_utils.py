@@ -95,34 +95,33 @@ def decode_ngram(orig_tokens, token_logits, converter, n, pooling=None):
         ngram_ids = converter.convert_tag2idx(['B'] + ['I' for _ in range(n-2)] + ['E'])
     else:
         logger.info('invalid %d-gram !' %n)
-    offsets = [i for i in range(len(ngram_ids))]
-        
+    offsets = list(range(len(ngram_ids)))
+
     # combine n-gram scores
     phrase_set = {}
     valid_length = (len(orig_tokens) - n + 1)
     for i in range(valid_length):
         n_gram = ' '.join(orig_tokens[i:i+n])
-        
+
         if pooling == 'mean':
             n_gram_score = float(np.mean([token_logits[i+bias][tag] for bias, tag in zip(offsets, ngram_ids)]))
         elif pooling == 'min':
-            n_gram_score = min([token_logits[i+bias][tag] for bias, tag in zip(offsets, ngram_ids)])
+            n_gram_score = min(
+                token_logits[i + bias][tag]
+                for bias, tag in zip(offsets, ngram_ids)
+            )
         elif pooling == 'log_mean':
             n_gram_score = float(np.mean([np.log(token_logits[i+bias][tag]) for bias, tag in zip(offsets, ngram_ids)]))
         else:
-            logger.info('not %s pooling method !' % pooling)
-            
+            logger.info(f'not {pooling} pooling method !')
+
         if n_gram not in phrase_set:
             phrase_set[n_gram] = n_gram_score
         else:
             phrase_set[n_gram] += n_gram_score
-        
-    phrase_list = []
-    for phrase, score in phrase_set.items():
-        phrase_list.append((phrase, score))
-        
-    sorted_phrase_list = sorted(phrase_list, key=lambda x: x[1], reverse=True)
-    return sorted_phrase_list
+
+    phrase_list = list(phrase_set.items())
+    return sorted(phrase_list, key=lambda x: x[1], reverse=True)
         
 
 
@@ -173,7 +172,7 @@ def getScoreEM(candidate, reference):
                 scoring[reference_key][candidate_key] = 1
             else:
                 scoring[reference_key][candidate_key] = 0
-    while len(scoring) > 0:
+    while scoring:
         max_score = -1
         max_label = ''
         for reference_label in scoring:
@@ -194,17 +193,15 @@ def get_recall_score(candidate, reference):
     scoring, best_match = {}, {}
     max_score, max_label =  0,''
     set_candidate, set_reference = [], []
-    for candidate_label in candidate:
-        set_candidate.append(set(candidate_label))
-    for reference_label in reference:
-        set_reference.append(set(reference_label))
+    set_candidate.extend(set(candidate_label) for candidate_label in candidate)
+    set_reference.extend(set(reference_label) for reference_label in reference)
     for reference_label in set_reference:
         reference_key = str(reference_label)
         scoring[reference_key] = {}
         for candidate_label in set_candidate:
             candidate_key = str(candidate_label)
             scoring[reference_key][candidate_key] = (len(reference_label) - len(reference_label-candidate_label))/len(candidate_label)
-    while len(scoring) > 0:
+    while scoring:
         max_score = 0
         max_label = ''
         for reference_label in scoring:
@@ -224,17 +221,15 @@ def get_precision_score(candidate, reference):
     scoring, best_match = {}, {}
     max_score, max_label =  0,''
     set_candidate, set_reference = [], []
-    for candidate_label in candidate:
-        set_candidate.append(set(candidate_label))
-    for reference_label in reference:
-        set_reference.append(set(reference_label))
+    set_candidate.extend(set(candidate_label) for candidate_label in candidate)
+    set_reference.extend(set(reference_label) for reference_label in reference)
     for reference_label in set_reference:
         reference_key = str(reference_label)
         scoring[reference_key] = {}
         for candidate_label in set_candidate:
             candidate_key = str(candidate_label)
             scoring[reference_key][candidate_key] = (len(reference_label) - len(reference_label-candidate_label))/len(reference_label)
-    while len(scoring) > 0:
+    while scoring:
         max_score = 0
         max_label = ''
         for reference_label in scoring:

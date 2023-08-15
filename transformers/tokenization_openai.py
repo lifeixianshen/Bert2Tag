@@ -113,13 +113,13 @@ class OpenAIGPTTokenizer(PreTrainedTokenizer):
         return len(self.encoder)
 
     def bpe(self, token):
-        word = tuple(token[:-1]) + (token[-1] + '</w>',)
+        word = tuple(token[:-1]) + (f'{token[-1]}</w>', )
         if token in self.cache:
             return self.cache[token]
         pairs = get_pairs(word)
 
         if not pairs:
-            return token+'</w>'
+            return f'{token}</w>'
 
         while True:
             bigram = min(pairs, key=lambda pair: self.bpe_ranks.get(pair, float('inf')))
@@ -162,12 +162,12 @@ class OpenAIGPTTokenizer(PreTrainedTokenizer):
             # Using BERT's BasicTokenizer
             text = self.nlp.tokenize(text)
             for token in text:
-                split_tokens.extend([t for t in self.bpe(token).split(' ')])
+                split_tokens.extend(list(self.bpe(token).split(' ')))
         else:
             # Using SpaCy & ftfy (original tokenization process of OpenAI GPT)
             text = self.nlp(text_standardize(self.fix_text(text)))
             for token in text:
-                split_tokens.extend([t for t in self.bpe(token.text.lower()).split(' ')])
+                split_tokens.extend(list(self.bpe(token.text.lower()).split(' ')))
         return split_tokens
 
     def _convert_token_to_id(self, token):
@@ -180,13 +180,12 @@ class OpenAIGPTTokenizer(PreTrainedTokenizer):
 
     def convert_tokens_to_string(self, tokens):
         """ Converts a sequence of tokens (string) in a single string. """
-        out_string = ''.join(tokens).replace('</w>', ' ').strip()
-        return out_string
+        return ''.join(tokens).replace('</w>', ' ').strip()
 
     def save_vocabulary(self, save_directory):
         """Save the tokenizer vocabulary and merge files to a directory."""
         if not os.path.isdir(save_directory):
-            logger.error("Vocabulary path ({}) should be a directory".format(save_directory))
+            logger.error(f"Vocabulary path ({save_directory}) should be a directory")
             return
         vocab_file = os.path.join(save_directory, VOCAB_FILES_NAMES['vocab_file'])
         merge_file = os.path.join(save_directory, VOCAB_FILES_NAMES['merges_file'])
@@ -199,8 +198,9 @@ class OpenAIGPTTokenizer(PreTrainedTokenizer):
             writer.write(u'#version: 0.2\n')
             for bpe_tokens, token_index in sorted(self.bpe_ranks.items(), key=lambda kv: kv[1]):
                 if index != token_index:
-                    logger.warning("Saving vocabulary to {}: BPE merge indices are not consecutive."
-                                   " Please check that the tokenizer is not corrupted!".format(merge_file))
+                    logger.warning(
+                        f"Saving vocabulary to {merge_file}: BPE merge indices are not consecutive. Please check that the tokenizer is not corrupted!"
+                    )
                     index = token_index
                 writer.write(' '.join(bpe_tokens) + u'\n')
                 index += 1

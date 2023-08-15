@@ -160,8 +160,10 @@ class XLNetModelTest(CommonTestCases.CommonModelTester):
                 list(result["outputs"].size()),
                 [self.batch_size, self.seq_length, self.hidden_size])
             self.parent.assertListEqual(
-                list(list(mem.size()) for mem in result["mems_1"]),
-                [[self.seq_length, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.size()) for mem in result["mems_1"]],
+                [[self.seq_length, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
 
         def create_and_check_xlnet_lm_head(self, config, input_ids_1, input_ids_2, input_ids_q, perm_mask, input_mask,
                 target_mapping, segment_ids, lm_labels, sequence_labels, is_impossible_labels):
@@ -190,8 +192,10 @@ class XLNetModelTest(CommonTestCases.CommonModelTester):
                 list(result["all_logits_1"].size()),
                 [self.batch_size, self.seq_length, self.vocab_size])
             self.parent.assertListEqual(
-                list(list(mem.size()) for mem in result["mems_1"]),
-                [[self.seq_length, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.size()) for mem in result["mems_1"]],
+                [[self.seq_length, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
 
             self.parent.assertListEqual(
                 list(result["loss_2"].size()),
@@ -200,8 +204,10 @@ class XLNetModelTest(CommonTestCases.CommonModelTester):
                 list(result["all_logits_2"].size()),
                 [self.batch_size, self.seq_length, self.vocab_size])
             self.parent.assertListEqual(
-                list(list(mem.size()) for mem in result["mems_2"]),
-                [[self.mem_len, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.size()) for mem in result["mems_2"]],
+                [[self.mem_len, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
 
         def create_and_check_xlnet_qa(self, config, input_ids_1, input_ids_2, input_ids_q, perm_mask, input_mask,
                 target_mapping, segment_ids, lm_labels, sequence_labels, is_impossible_labels):
@@ -258,8 +264,10 @@ class XLNetModelTest(CommonTestCases.CommonModelTester):
                 list(result["cls_logits"].size()),
                 [self.batch_size])
             self.parent.assertListEqual(
-                list(list(mem.size()) for mem in result["mems"]),
-                [[self.seq_length, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.size()) for mem in result["mems"]],
+                [[self.seq_length, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
 
         def create_and_check_xlnet_sequence_classif(self, config, input_ids_1, input_ids_2, input_ids_q, perm_mask, input_mask,
                 target_mapping, segment_ids, lm_labels, sequence_labels, is_impossible_labels):
@@ -282,8 +290,10 @@ class XLNetModelTest(CommonTestCases.CommonModelTester):
                 list(result["logits"].size()),
                 [self.batch_size, self.type_sequence_label_size])
             self.parent.assertListEqual(
-                list(list(mem.size()) for mem in result["mems_1"]),
-                [[self.seq_length, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.size()) for mem in result["mems_1"]],
+                [[self.seq_length, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
 
         def prepare_config_and_inputs_for_common(self):
             config_and_inputs = self.prepare_config_and_inputs()

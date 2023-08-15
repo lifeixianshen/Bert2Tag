@@ -41,25 +41,25 @@ def add_preprocess_opts(parser):
 # load openkp source datasets
 # ----------------------------------------------------------------------------------------
 def set_logger(args):
-    logger = logging.getLogger() 
+    logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]', '%m/%d/%Y %I:%M:%S %p')
-    console = logging.StreamHandler() 
+    console = logging.StreamHandler()
     console.setFormatter(fmt) 
 
     logfile = logging.FileHandler(args.log_file, 'w')
     logfile.setFormatter(fmt)
     logger.addHandler(logfile)
-    logger.info('COMMAND: %s' % ' '.join(sys.argv))
+    logger.info(f"COMMAND: {' '.join(sys.argv)}")
 
     
 def load_json_data(mode):
     ''' Keys : 'url', 'VDOM', 'text', 'KeyPhrases' '''
-    source_path = os.path.join(opt.source_dataset_dir, 'OpenKP%s.jsonl' % mode)
+    source_path = os.path.join(opt.source_dataset_dir, f'OpenKP{mode}.jsonl')
     data_pairs = []
     with codecs.open(source_path, "r", "utf-8") as corpus_file:
-        for idx, line in enumerate(tqdm(corpus_file)):
+        for line in tqdm(corpus_file):
             json_ = json.loads(line)
             data_pairs.append(json_)
     return data_pairs
@@ -98,7 +98,7 @@ def filter_absent_phrase(examples):
     '''
     data_list = []
     overlap_num = 0
-    
+
     null_index = []
     absent_index = []
     for idx, ex in enumerate(tqdm(examples)):
@@ -106,36 +106,37 @@ def filter_absent_phrase(examples):
         lower_tokens = [t.lower() for t in ex[0]]
         lower_phrases, prepro_phrases = prepro_utils.merge_same(ex[1])
         # lower_phrases : lower cased phrases & prepro_phrases : cased phrases
-        
+
         present_phrases = prepro_utils.find_answer(lower_tokens, lower_phrases)
         if present_phrases is None:
             null_index.append(idx)
             continue
         if len(present_phrases['keyphrases']) != len(lower_phrases):
             absent_index.append(idx)
-        
+
         # filter overlap label positions
         flatten_postions = [pos for poses in present_phrases['start_end_pos'] for pos in poses]
         sorted_positions = sorted(flatten_postions, key=lambda x: x[0])
-        
+
         filter_positions = prepro_utils.filter_overlap(sorted_positions)
         if len(filter_positions) != len(sorted_positions):
             overlap_num += 1
-            
-        data = {}
-        data['url'] = ex[-1]
-        data['doc_tokens'] = ex[0]
-        data['keyphrases'] = prepro_phrases
-        data['start_end_pos'] = filter_positions
+
+        data = {
+            'url': ex[-1],
+            'doc_tokens': ex[0],
+            'keyphrases': prepro_phrases,
+            'start_end_pos': filter_positions,
+        }
         data_list.append(data)
-        
+
     logger.info('%d sample is null, null_index as follow : '% len(null_index))
     logger.info(null_index)
     logger.info('%d sample is absent, absent_index as follow : '% len(absent_index))
     logger.info(absent_index)
     logger.info('delete overlap keyphrase : %d , overlap / total = %.2f' 
           %(overlap_num, float(overlap_num/len(data_list)*100)) + '%')
-        
+
     return data_list
 
 # ----------------------------------------------------------------------------------------
@@ -181,17 +182,17 @@ def convert_for_bert_tag(examples, tokenizer):
                 logger.info('ERROR')
                 break
 
-        InputFeatures = {}
-        InputFeatures['url'] =  example['url']
-        InputFeatures['ex_id'] = example_index # yes
-        InputFeatures['tokens'] = all_doc_tokens # yes
-        InputFeatures['label'] = label
-        InputFeatures['valid_mask'] = valid_mask
-        InputFeatures['tok_to_orig_index'] = tok_to_orig_index
-        InputFeatures['orig_tokens'] = example['doc_tokens']
-        InputFeatures['orig_phrases'] = example['keyphrases'] # yes
-        InputFeatures['orig_start_end_pos'] = example['start_end_pos'] # yes
-        
+        InputFeatures = {
+            'url': example['url'],
+            'ex_id': example_index,
+            'tokens': all_doc_tokens,
+            'label': label,
+            'valid_mask': valid_mask,
+            'tok_to_orig_index': tok_to_orig_index,
+            'orig_tokens': example['doc_tokens'],
+            'orig_phrases': example['keyphrases'],
+            'orig_start_end_pos': example['start_end_pos'],
+        }
         # verify InputFeatures
         if not prepro_utils.verify_ex(InputFeatures):
             continue
@@ -225,17 +226,16 @@ def preprocess_for_Eval(examples, tokenizer):
                     valid_mask.append(1)
                 else:
                     valid_mask.append(0)
-                    
-        InputFeatures = {}
-        InputFeatures['ex_id'] = example_index 
-        InputFeatures['url'] =  example['url']
-        InputFeatures['VDOM'] = example['VDOM']
-        InputFeatures['orig_tokens'] = doc_tokens
-        
-        InputFeatures['tokens'] = all_doc_tokens 
-        InputFeatures['valid_mask'] = valid_mask
-        InputFeatures['tok_to_orig_index'] = tok_to_orig_index
-        
+
+        InputFeatures = {
+            'ex_id': example_index,
+            'url': example['url'],
+            'VDOM': example['VDOM'],
+            'orig_tokens': doc_tokens,
+            'tokens': all_doc_tokens,
+            'valid_mask': valid_mask,
+            'tok_to_orig_index': tok_to_orig_index,
+        }
         # verify InputFeatures
         if not prepro_utils.check_tokenize(InputFeatures):
             logger.info('Error Found : ex_id = %d , url = %s' %(example_index, example['url']))
@@ -250,12 +250,10 @@ def preprocess_for_Eval(examples, tokenizer):
 def save_Dev_truths(examples, filename):
     with open(filename, 'w', encoding='utf-8') as f_pred:
         for ex in tqdm(examples):
-            data = {}
-            data['url'] = ex['url']
-            data['KeyPhrases'] = ex['KeyPhrases']
-            f_pred.write("{}\n".format(json.dumps(data)))
+            data = {'url': ex['url'], 'KeyPhrases': ex['KeyPhrases']}
+            f_pred.write(f"{json.dumps(data)}\n")
         f_pred.close()
-    print('Success save Dev_reference to %s'% filename)
+    print(f'Success save Dev_reference to {filename}')
     
 def save_preprocess_data(data_list, filename):
     with open(filename, "w", encoding="utf-8") as f:
@@ -271,31 +269,30 @@ def main_preocess(input_mode, save_mode):
 
     source_data = load_json_data(input_mode)
     logger.info("1/5 success loaded %s data : %d " % (input_mode, len(source_data)))
-    
+
     if input_mode == 'Dev':
         save_Dev_truths(source_data, os.path.join(opt.output_path, "Dev_candidate.json"))
-        
-    # preprocess for training 
+
+    # preprocess for training
     if input_mode in ['Train', 'Dev']:
         tokenize_data = tokenize_source_data(source_data)
-        logger.info('2/5: success tokenize %s data !' %save_mode)
+        logger.info(f'2/5: success tokenize {save_mode} data !')
 
         present_data = filter_absent_phrase(tokenize_data)
         logger.info('3/5 : success obtain %s present keyphrase for training bert: %d (filter out : %d)'
               %(save_mode, len(present_data), (len(tokenize_data) - len(present_data))))
 
         return_examples = convert_for_bert_tag(present_data, tokenizer)
-        logger.info('4/5 : success obtain %s data for training bert .' %save_mode)
+        logger.info(f'4/5 : success obtain {save_mode} data for training bert .')
 
-    # preprocess for evaluation
     elif input_mode == 'EvalPublic':
         return_examples = preprocess_for_Eval(source_data, tokenizer)
     else:
-        logger.info('Error : not this mode : %s' % input_mode)
+        logger.info(f'Error : not this mode : {input_mode}')
 
-    filename = os.path.join(opt.output_path, "openkp.%s.json" % save_mode)
+    filename = os.path.join(opt.output_path, f"openkp.{save_mode}.json")
     save_preprocess_data(return_examples, filename)
-    logger.info("5/5 : success saved %s data to : %s" % (save_mode, filename))
+    logger.info(f"5/5 : success saved {save_mode} data to : {filename}")
 
 
 if __name__ == "__main__":
@@ -309,18 +306,20 @@ if __name__ == "__main__":
     opt = parser.parse_args(opt)
 
     opt.cache_dir = os.path.join(opt.pretrain_model_path, opt.cache_folder)
-    opt.log_file = os.path.join(opt.output_path, '%s-logging.txt' % time.strftime("%Y.%m.%d-%H:%M:%S"))
+    opt.log_file = os.path.join(
+        opt.output_path, f'{time.strftime("%Y.%m.%d-%H:%M:%S")}-logging.txt'
+    )
 
     # folder
     if not os.path.exists(opt.source_dataset_dir):
-        logger.info("don't exist the source dataset dir: %s" % opt.source_dataset_dir)
+        logger.info(f"don't exist the source dataset dir: {opt.source_dataset_dir}")
 
     if not os.path.exists(opt.output_path):
         os.makedirs(opt.output_path)
-        
+
     # set logging
     set_logger(opt)
-    
+
     mode_dir = [('EvalPublic', 'eval_public'), ('Dev', 'valid'), ('Train', 'train')]
     for input_mode, save_mode in mode_dir:
         main_preocess(input_mode, save_mode)

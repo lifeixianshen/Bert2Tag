@@ -14,18 +14,14 @@ class IdxTag_Converter(object):
     '''
     def __init__(self, idx2tag):
         self.idx2tag = idx2tag
-        tag2idx = {}
-        for idx, tag in enumerate(idx2tag):
-            tag2idx[tag] = idx
+        tag2idx = {tag: idx for idx, tag in enumerate(idx2tag)}
         self.tag2idx = tag2idx
         
     def convert_idx2tag(self, index_list):
-        tag_list = [self.idx2tag[index] for index in index_list]
-        return tag_list
+        return [self.idx2tag[index] for index in index_list]
         
     def convert_tag2idx(self, tag_list):
-        index_list = [self.tag2idx[tag] for tag in tag_list]
-        return index_list
+        return [self.tag2idx[tag] for tag in tag_list]
 
 # ----------------------------------------------------------------------------------------
 # delet null keyphrase
@@ -38,16 +34,12 @@ class DEL_ASCII(object):
         for token in orig_tokens:
             token = self._run_strip_accents(token)                
             split_tokens.extend(self._run_split_on_punc(token))
-        output_tokens = self.whitespace_tokenize(" ".join(split_tokens))
-        return output_tokens
+        return self.whitespace_tokenize(" ".join(split_tokens))
     
     def whitespace_tokenize(self, text):
         """Runs basic whitespace cleaning and splitting on a piece of text."""
         text = text.strip()
-        if not text:
-            return []
-        tokens = text.split()
-        return tokens
+        return [] if not text else text.split()
 
     def _run_strip_accents(self, text):
         """Strips accents from a piece of text."""
@@ -90,9 +82,7 @@ class DEL_ASCII(object):
                 (cp >= 91 and cp <= 96) or (cp >= 123 and cp <= 126)):
             return True
         cat = unicodedata.category(char)
-        if cat.startswith("P"):
-            return True
-        return False
+        return bool(cat.startswith("P"))
         
 # ----------------------------------------------------------------------------------------
 # find keyphrase position in document and merge the same keyphrases
@@ -150,31 +140,30 @@ def find_answer(document, answers):
         [[[0,0],[20,21]], [[1,1]]]
     '''
     tot_doc_char = ' '.join(document)
-    
+
     positions_for_all = []
     all_present_answers = []
     for answer in answers:
         ans_string = ' '.join(answer)
-        
+
         if ans_string not in tot_doc_char:
             continue
-        else: 
-            positions_for_each = []
-            # find all positions for each answer
-            for i in range(0, len(document) - len(answer) + 1):
-                Flag = False
-                if answer == document[i:i+len(answer)]:
-                    Flag = True
-                if Flag:
-                    assert (i+len(answer)-1) >= i
-                    positions_for_each.append([i, i+len(answer)-1])
-        if len(positions_for_each) > 0 :
+        positions_for_each = []
+        # find all positions for each answer
+        for i in range(0, len(document) - len(answer) + 1):
+            Flag = False
+            if answer == document[i:i+len(answer)]:
+                Flag = True
+            if Flag:
+                assert (i+len(answer)-1) >= i
+                positions_for_each.append([i, i+len(answer)-1])
+        if positions_for_each:
             positions_for_all.append(positions_for_each)
             all_present_answers.append(answer)
-            
+
     assert len(positions_for_all) == len(all_present_answers)
-    
-    if len(all_present_answers) == 0:
+
+    if not all_present_answers:
         return None
     return {'keyphrases':all_present_answers, 'start_end_pos':positions_for_all}
 
@@ -186,9 +175,7 @@ def verify_ex(ex):
     ''' If you want to check whether the preprocess is true, 
     use these functions :`check_tokenize` & `check_tag`
     '''
-    if check_tokenize(ex) and check_tag(ex):
-        return True
-    return False
+    return bool(check_tokenize(ex) and check_tag(ex))
 
 def check_tokenize(ex):
     if len(ex['tokens']) != len(ex['valid_mask']):

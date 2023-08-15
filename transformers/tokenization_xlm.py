@@ -550,10 +550,10 @@ class XLMTokenizer(PreTrainedTokenizer):
                                            **kwargs)
 
         # cache of sm.MosesPunctNormalizer instance
-        self.cache_moses_punct_normalizer = dict()
+        self.cache_moses_punct_normalizer = {}
         # cache of sm.MosesTokenizer instance
-        self.cache_moses_tokenizer = dict()
-        self.lang_with_custom_tokenizer = set(['zh', 'th', 'ja'])
+        self.cache_moses_tokenizer = {}
+        self.lang_with_custom_tokenizer = {'zh', 'th', 'ja'}
         # True for current supported model (v1.2.0), False for XLM-17 & 100
         self.do_lowercase_and_remove_accent = do_lowercase_and_remove_accent
         self.lang2id = lang2id
@@ -597,7 +597,9 @@ class XLMTokenizer(PreTrainedTokenizer):
         if self.ja_word_tokenizer is None:
             try:
                 import Mykytea
-                self.ja_word_tokenizer = Mykytea.Mykytea('-model %s/local/share/kytea/model.bin' % os.path.expanduser('~'))
+                self.ja_word_tokenizer = Mykytea.Mykytea(
+                    f"-model {os.path.expanduser('~')}/local/share/kytea/model.bin"
+                )
             except (AttributeError, ImportError) as e:
                 logger.error("Make sure you install KyTea (https://github.com/neubig/kytea) and it's python wrapper (https://github.com/chezou/Mykytea-python) with the following steps")
                 logger.error("1. git clone git@github.com:neubig/kytea.git && cd kytea")
@@ -613,13 +615,13 @@ class XLMTokenizer(PreTrainedTokenizer):
         return len(self.encoder)
 
     def bpe(self, token):
-        word = tuple(token[:-1]) + (token[-1] + '</w>',)
+        word = tuple(token[:-1]) + (f'{token[-1]}</w>', )
         if token in self.cache:
             return self.cache[token]
         pairs = get_pairs(word)
 
         if not pairs:
-            return token+'</w>'
+            return f'{token}</w>'
 
         while True:
             bigram = min(pairs, key=lambda pair: self.bpe_ranks.get(pair, float('inf')))
@@ -737,7 +739,7 @@ class XLMTokenizer(PreTrainedTokenizer):
         split_tokens = []
         for token in text:
             if token:
-                split_tokens.extend([t for t in self.bpe(token).split(' ')])
+                split_tokens.extend(list(self.bpe(token).split(' ')))
 
         return split_tokens
 
@@ -751,8 +753,7 @@ class XLMTokenizer(PreTrainedTokenizer):
 
     def convert_tokens_to_string(self, tokens):
         """ Converts a sequence of tokens (string) in a single string. """
-        out_string = ''.join(tokens).replace('</w>', ' ').strip()
-        return out_string
+        return ''.join(tokens).replace('</w>', ' ').strip()
 
     def build_inputs_with_special_tokens(self, token_ids_0, token_ids_1=None):
         """
@@ -812,7 +813,7 @@ class XLMTokenizer(PreTrainedTokenizer):
     def save_vocabulary(self, save_directory):
         """Save the tokenizer vocabulary and merge files to a directory."""
         if not os.path.isdir(save_directory):
-            logger.error("Vocabulary path ({}) should be a directory".format(save_directory))
+            logger.error(f"Vocabulary path ({save_directory}) should be a directory")
             return
         vocab_file = os.path.join(save_directory, VOCAB_FILES_NAMES['vocab_file'])
         merge_file = os.path.join(save_directory, VOCAB_FILES_NAMES['merges_file'])
@@ -824,8 +825,9 @@ class XLMTokenizer(PreTrainedTokenizer):
         with open(merge_file, "w", encoding="utf-8") as writer:
             for bpe_tokens, token_index in sorted(self.bpe_ranks.items(), key=lambda kv: kv[1]):
                 if index != token_index:
-                    logger.warning("Saving vocabulary to {}: BPE merge indices are not consecutive."
-                                   " Please check that the tokenizer is not corrupted!".format(merge_file))
+                    logger.warning(
+                        f"Saving vocabulary to {merge_file}: BPE merge indices are not consecutive. Please check that the tokenizer is not corrupted!"
+                    )
                     index = token_index
                 writer.write(' '.join(bpe_tokens) + u'\n')
                 index += 1

@@ -66,22 +66,26 @@ def evaluate(candidates, references, urls):
             precision_scores[i].append(precision)
             recall_scores[i].append(recall)
     print("########################\nMetrics")
-    for i in precision_scores:
-        print("@{}".format(i))
-        print("F1:{}".format(np.mean(f1_scores[i])))
-        print("P:{}".format(np.mean(precision_scores[i])))
-        print("R:{}".format(np.mean(recall_scores[i])))
+    for i, value in precision_scores.items():
+        print(f"@{i}")
+        print(f"F1:{np.mean(f1_scores[i])}")
+        print(f"P:{np.mean(value)}")
+        print(f"R:{np.mean(recall_scores[i])}")
     print("#########################")
 
 def files_are_good(candidate, reference):
     referenceURLs = set(reference.keys())
     candidateURLs = set(candidate.keys())
     if len((referenceURLs - candidateURLs)) > 0:
-        print("ERROR:Candidate File is missing URLS present in reference file\nMissing urls:{}".format(referenceURLs-candidateURLs))
-        return False 
+        print(
+            f"ERROR:Candidate File is missing URLS present in reference file\nMissing urls:{referenceURLs - candidateURLs}"
+        )
+        return False
     if len((candidateURLs - referenceURLs)) > 0:
-        print("ERROR:Candidate File includes URLS not present in reference file\nUnexpected urls:{}".format(candidateURLs-referenceURLs))
-        return False 
+        print(
+            f"ERROR:Candidate File includes URLS not present in reference file\nUnexpected urls:{candidateURLs - referenceURLs}"
+        )
+        return False
     return True
 
 def load_file(filename):

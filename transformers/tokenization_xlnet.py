@@ -109,10 +109,7 @@ class XLNetTokenizer(PreTrainedTokenizer):
         self.sp_model.Load(self.vocab_file)
 
     def preprocess_text(self, inputs):
-        if self.remove_space:
-            outputs = ' '.join(inputs.strip().split())
-        else:
-            outputs = inputs
+        outputs = ' '.join(inputs.strip().split()) if self.remove_space else inputs
         outputs = outputs.replace("``", '"').replace("''", '"')
 
         if six.PY2 and isinstance(outputs, str):
@@ -178,8 +175,7 @@ class XLNetTokenizer(PreTrainedTokenizer):
 
     def convert_tokens_to_string(self, tokens):
         """Converts a sequence of tokens (strings for sub-words) in a single string."""
-        out_string = ''.join(tokens).replace(SPIECE_UNDERLINE, ' ').strip()
-        return out_string
+        return ''.join(tokens).replace(SPIECE_UNDERLINE, ' ').strip()
 
     def build_inputs_with_special_tokens(self, token_ids_0, token_ids_1=None):
         """
@@ -231,19 +227,20 @@ class XLNetTokenizer(PreTrainedTokenizer):
         if token_ids_1 is None, only returns the first portion of the mask (0's).
         """
         sep = [self.sep_token_id]
-        cls = [self.cls_token_id]
-        cls_segment_id = [2]
-
         if token_ids_1 is None:
+            cls = [self.cls_token_id]
             return len(token_ids_0 + sep + cls) * [0]
-        return len(token_ids_0 + sep) * [0] + len(token_ids_1 + sep) * [1] + cls_segment_id
+        else:
+            cls_segment_id = [2]
+
+            return len(token_ids_0 + sep) * [0] + len(token_ids_1 + sep) * [1] + cls_segment_id
 
     def save_vocabulary(self, save_directory):
         """ Save the sentencepiece vocabulary (copy original file) and special tokens file
             to a directory.
         """
         if not os.path.isdir(save_directory):
-            logger.error("Vocabulary path ({}) should be a directory".format(save_directory))
+            logger.error(f"Vocabulary path ({save_directory}) should be a directory")
             return
         out_vocab_file = os.path.join(save_directory, VOCAB_FILES_NAMES['vocab_file'])
 

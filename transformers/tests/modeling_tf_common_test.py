@@ -125,8 +125,10 @@ class TFCommonTestCases:
 
                 # Check predictions on first output (logits/hidden-states) are close enought given low-level computational differences
                 pt_model.eval()
-                pt_inputs_dict = dict((name, torch.from_numpy(key.numpy()).to(torch.long))
-                                      for name, key in inputs_dict.items())
+                pt_inputs_dict = {
+                    name: torch.from_numpy(key.numpy()).to(torch.long)
+                    for name, key in inputs_dict.items()
+                }
                 with torch.no_grad():
                     pto = pt_model(**pt_inputs_dict)
                 tfo = tf_model(inputs_dict)
@@ -145,8 +147,10 @@ class TFCommonTestCases:
 
                 # Check predictions on first output (logits/hidden-states) are close enought given low-level computational differences
                 pt_model.eval()
-                pt_inputs_dict = dict((name, torch.from_numpy(key.numpy()).to(torch.long))
-                                      for name, key in inputs_dict.items())
+                pt_inputs_dict = {
+                    name: torch.from_numpy(key.numpy()).to(torch.long)
+                    for name, key in inputs_dict.items()
+                }
                 with torch.no_grad():
                     pto = pt_model(**pt_inputs_dict)
                 tfo = tf_model(inputs_dict)
@@ -411,15 +415,10 @@ def ids_tensor(shape, vocab_size, rng=None, name=None, dtype=None):
     for dim in shape:
         total_dims *= dim
 
-    values = []
-    for _ in range(total_dims):
-        values.append(rng.randint(0, vocab_size - 1))
-
-    output = tf.constant(values,
-                         shape=shape,
-                         dtype=dtype if dtype is not None else tf.int32)
-
-    return output
+    values = [rng.randint(0, vocab_size - 1) for _ in range(total_dims)]
+    return tf.constant(
+        values, shape=shape, dtype=dtype if dtype is not None else tf.int32
+    )
 
 
 class TFModelUtilsTest(unittest.TestCase):

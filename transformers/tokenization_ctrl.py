@@ -115,8 +115,7 @@ def get_pairs(word):
         pairs.add((prev_char, char))
         prev_char = char
 
-    pairs = set(pairs)
-    return pairs
+    return set(pairs)
 
 class CTRLTokenizer(PreTrainedTokenizer):
     """
@@ -148,7 +147,7 @@ class CTRLTokenizer(PreTrainedTokenizer):
         if token in self.cache:
             return self.cache[token]
         word = tuple(token)
-        word = tuple(list(word[:-1]) + [word[-1]+'</w>'])
+        word = tuple(list(word[:-1]) + [f'{word[-1]}</w>'])
         pairs = get_pairs(word)
 
         if not pairs:
@@ -195,7 +194,7 @@ class CTRLTokenizer(PreTrainedTokenizer):
         text = text.split(' ')
 
         for token in text:
-            split_tokens.extend([t for t in self.bpe(token).split(' ')])
+            split_tokens.extend(list(self.bpe(token).split(' ')))
         return split_tokens
 
     def _convert_token_to_id(self, token):
@@ -208,13 +207,12 @@ class CTRLTokenizer(PreTrainedTokenizer):
 
     def convert_tokens_to_string(self, tokens):
         """ Converts a sequence of tokens (string) in a single string. """
-        out_string = ' '.join(tokens).replace('@@ ', '').strip()
-        return out_string
+        return ' '.join(tokens).replace('@@ ', '').strip()
 
     def save_vocabulary(self, save_directory):
         """Save the tokenizer vocabulary and merge files to a directory."""
         if not os.path.isdir(save_directory):
-            logger.error("Vocabulary path ({}) should be a directory".format(save_directory))
+            logger.error(f"Vocabulary path ({save_directory}) should be a directory")
             return
         vocab_file = os.path.join(save_directory, VOCAB_FILES_NAMES['vocab_file'])
         merge_file = os.path.join(save_directory, VOCAB_FILES_NAMES['merges_file'])
@@ -227,8 +225,9 @@ class CTRLTokenizer(PreTrainedTokenizer):
             writer.write(u'#version: 0.2\n')
             for bpe_tokens, token_index in sorted(self.bpe_ranks.items(), key=lambda kv: kv[1]):
                 if index != token_index:
-                    logger.warning("Saving vocabulary to {}: BPE merge indices are not consecutive."
-                                   " Please check that the tokenizer is not corrupted!".format(merge_file))
+                    logger.warning(
+                        f"Saving vocabulary to {merge_file}: BPE merge indices are not consecutive. Please check that the tokenizer is not corrupted!"
+                    )
                     index = token_index
                 writer.write(' '.join(bpe_tokens) + u'\n')
                 index += 1

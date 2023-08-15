@@ -184,7 +184,7 @@ class GPT2Tokenizer(PreTrainedTokenizer):
                     Begin the sentence with at least one space toto get invariance to word order in GPT-2 (and RoBERTa) tokenizers.
         """
         if add_prefix_space:
-            text = ' ' + text
+            text = f' {text}'
 
         bpe_tokens = []
         for token in re.findall(self.pat, text):
@@ -192,7 +192,7 @@ class GPT2Tokenizer(PreTrainedTokenizer):
                 token = ''.join(self.byte_encoder[ord(b)] for b in token) # Maps all our bytes to unicode strings, avoiding controle tokens of the BPE (spaces in our case)
             else:
                 token = ''.join(self.byte_encoder[b] for b in token.encode('utf-8')) # Maps all our bytes to unicode strings, avoiding controle tokens of the BPE (spaces in our case)
-            bpe_tokens.extend(bpe_token for bpe_token in self.bpe(token).split(' '))
+            bpe_tokens.extend(iter(self.bpe(token).split(' ')))
         return bpe_tokens
 
     def _convert_token_to_id(self, token):
@@ -206,13 +206,14 @@ class GPT2Tokenizer(PreTrainedTokenizer):
     def convert_tokens_to_string(self, tokens):
         """ Converts a sequence of tokens (string) in a single string. """
         text = ''.join(tokens)
-        text = bytearray([self.byte_decoder[c] for c in text]).decode('utf-8', errors=self.errors)
-        return text
+        return bytearray([self.byte_decoder[c] for c in text]).decode(
+            'utf-8', errors=self.errors
+        )
 
     def save_vocabulary(self, save_directory):
         """Save the tokenizer vocabulary and merge files to a directory."""
         if not os.path.isdir(save_directory):
-            logger.error("Vocabulary path ({}) should be a directory".format(save_directory))
+            logger.error(f"Vocabulary path ({save_directory}) should be a directory")
             return
         vocab_file = os.path.join(save_directory, VOCAB_FILES_NAMES['vocab_file'])
         merge_file = os.path.join(save_directory, VOCAB_FILES_NAMES['merges_file'])
@@ -225,8 +226,9 @@ class GPT2Tokenizer(PreTrainedTokenizer):
             writer.write(u'#version: 0.2\n')
             for bpe_tokens, token_index in sorted(self.bpe_ranks.items(), key=lambda kv: kv[1]):
                 if index != token_index:
-                    logger.warning("Saving vocabulary to {}: BPE merge indices are not consecutive."
-                                   " Please check that the tokenizer is not corrupted!".format(merge_file))
+                    logger.warning(
+                        f"Saving vocabulary to {merge_file}: BPE merge indices are not consecutive. Please check that the tokenizer is not corrupted!"
+                    )
                     index = token_index
                 writer.write(' '.join(bpe_tokens) + u'\n')
                 index += 1

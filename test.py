@@ -60,7 +60,7 @@ def decode_n_best_candidates(orig_tokens, token_logits, converter, max_gram, top
 # generate candidate for Public_Eval
 # -------------------------------------------------------------------------------------------
 def generate_candidates(dataset, data_loader, model, mode):
-    logging.info(' Start Generating Keyphrases for %s  ...'% mode)
+    logging.info(f' Start Generating Keyphrases for {mode}  ...')
     test_time = utils.Timer()     
 
     tot_examples = 0
@@ -74,9 +74,9 @@ def generate_candidates(dataset, data_loader, model, mode):
 
         example_indices, example_lengths = batch[-1], batch[-2]
         for batch_id, logit_list in enumerate(logit_lists):
-            
+
             example = dataset.examples[example_indices[batch_id]]
-            
+
             # example info
             valid_length = example_lengths[batch_id]
             cut_tokens = example['orig_tokens'][:valid_length]
@@ -86,7 +86,7 @@ def generate_candidates(dataset, data_loader, model, mode):
                                                                      converter, args.max_phrase_words, 100)
             candidate_KP = remove_empty(n_best_phrases)[:5]
             assert len(candidate_KP) == 5
-                
+
             # log groundtruths & predictions
             tot_predictions.append((example['url'], candidate_KP))
             tot_examples += 1
@@ -97,15 +97,18 @@ def generate_candidates(dataset, data_loader, model, mode):
 
 
 def save_prediction(args, tot_predictions, mode):
-    filename = os.path.join(args.pred_folder, '%s_candidate.json'% mode)
+    filename = os.path.join(args.pred_folder, f'{mode}_candidate.json')
     with open(filename, 'w', encoding='utf-8') as f_pred:
         for prediction in tot_predictions:
-            data = {}
-            data['url'] = prediction[0]
-            data['KeyPhrases'] = [keyphrase.split() for keyphrase in prediction[1]]
-            f_pred.write("{}\n".format(json.dumps(data)))
+            data = {
+                'url': prediction[0],
+                'KeyPhrases': [
+                    keyphrase.split() for keyphrase in prediction[1]
+                ],
+            }
+            f_pred.write(f"{json.dumps(data)}\n")
         f_pred.close()
-    logger.info('Success save %s prediction to %s' %(mode, filename))
+    logger.info(f'Success save {mode} prediction to {filename}')
 
     
 # -------------------------------------------------------------------------------------------
@@ -117,7 +120,7 @@ if __name__ == "__main__":
     # setting args
     parser = argparse.ArgumentParser('BERT-SeqTagging', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     config.add_default_args(parser)
-    
+
     args = parser.parse_args()
 
     # initilize agrs & config
@@ -132,7 +135,7 @@ if __name__ == "__main__":
         print("Waiting for debugger attach")
         ptvsd.enable_attach(address=(args.server_ip, args.server_port), redirect_output=True)
         ptvsd.wait_for_attach()
-    
+
     # -------------------------------------------------------------------------------------------
     # Setup CUDA, GPU & distributed training
     args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -145,14 +148,20 @@ if __name__ == "__main__":
         torch.distributed.init_process_group(backend='nccl')
         args.n_gpu = 1
     args.device = device
-    logger.info("Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
-                args.local_rank, device, args.n_gpu, bool(args.local_rank != -1), args.fp16)
-    
+    logger.info(
+        "Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
+        args.local_rank,
+        device,
+        args.n_gpu,
+        args.local_rank != -1,
+        args.fp16,
+    )
+
     # -------------------------------------------------------------------------------------------
     set_seed(args)
     if args.local_rank not in [-1, 0]:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
-    
+
     # -------------------------------------------------------------------------------------------
     # Load Model & Optimizer
     # -------------------------------------------------------------------------------------------
@@ -162,14 +171,14 @@ if __name__ == "__main__":
         model.set_device()
 
     except ValueError:
-        print("Could't Load Pretrain Model %s" % args.eval_checkpoint)
-        
+        print(f"Could't Load Pretrain Model {args.eval_checkpoint}")
+
     if args.n_gpu > 1:
         model.parallelize()
-    
+
     if args.local_rank != -1:
         model.distribute()
-        
+
     if args.local_rank == 0:
         torch.distributed.barrier()
 
@@ -177,16 +186,16 @@ if __name__ == "__main__":
     # init tokenizer & Converter 
     tokenizer = BertTokenizer.from_pretrained(args.cache_dir)
     converter = IdxTag_Converter(Idx2Tag)
-    
+
     # -------------------------------------------------------------------------------------------
     # build dataloaders
     logger.info("start loading openkp datasets ...")
     dataset_dict = utils.read_openkp_examples(args, tokenizer)
-    
+
     # -----------------------------------------------------------------------------------------------------------
     # Dev dataloader
     args.eval_batch_size = args.per_gpu_test_batch_size * max(1, args.n_gpu)
-    
+
     dev_dataset = utils.build_openkp_dataset(args, dataset_dict['valid'], tokenizer, converter)
     dev_sampler = torch.utils.data.sampler.SequentialSampler(dev_dataset)
     dev_data_loader = torch.utils.data.DataLoader(

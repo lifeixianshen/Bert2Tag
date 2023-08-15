@@ -84,9 +84,7 @@ class BertTokenizationTest(CommonTestCases.CommonTokenizerTester):
             "##ing"
         ]
 
-        vocab = {}
-        for (i, token) in enumerate(vocab_tokens):
-            vocab[token] = i
+        vocab = {token: i for i, token in enumerate(vocab_tokens)}
         tokenizer = WordpieceTokenizer(vocab=vocab, unk_token="[UNK]")
 
         self.assertListEqual(tokenizer.tokenize(""), [])

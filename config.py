@@ -114,7 +114,7 @@ def add_default_args(parser):
 def init_args_config(args):
     
     args.cache_dir = os.path.join(args.pretrain_model_path, args.cache_folder)
-    args.model_name = '%s-' % args.run_mode + time.strftime("%Y.%m.%d-%H:%M:%S")
+    args.model_name = f'{args.run_mode}-' + time.strftime("%Y.%m.%d-%H:%M:%S")
     args.log_folder = os.path.join(args.log_dir, args.model_name)
 
     # log folder
@@ -123,7 +123,7 @@ def init_args_config(args):
     if not os.path.exists(args.log_folder):
         os.mkdir(args.log_folder)
     args.log_file = os.path.join(args.log_folder, 'logging.txt')
-        
+
     # model folder
     if args.run_mode == 'train':
         args.output_folder = os.path.join(args.output_dir, args.model_name)
@@ -131,7 +131,7 @@ def init_args_config(args):
             os.mkdir(args.output_dir)
         if not os.path.exists(args.output_folder):
             os.mkdir(args.output_folder)
-            
+
         # viso folder
         if args.use_viso:
             args.viso_folder = os.path.join(args.log_folder, 'viso')
@@ -145,19 +145,19 @@ def init_args_config(args):
             os.mkdir(args.pred_dir)
         if not os.path.exists(args.pred_folder):
             os.mkdir(args.pred_folder)
-            
-    logger = logging.getLogger() 
+
+    logger = logging.getLogger()
     logger.setLevel(logging.INFO) # logger.setLevel(logging.DEBUG)
     fmt = logging.Formatter('%(asctime)s: [ %(message)s ]', '%m/%d/%Y %I:%M:%S %p')
-    
-    console = logging.StreamHandler() 
-    console.setFormatter(fmt) 
-    logger.addHandler(console) 
+
+    console = logging.StreamHandler()
+    console.setFormatter(fmt)
+    logger.addHandler(console)
     if args.log_file:
         logfile = logging.FileHandler(args.log_file, 'w')
         logfile.setFormatter(fmt)
         logger.addHandler(logfile)
-    logger.info('COMMAND: %s' % ' '.join(sys.argv))
+    logger.info(f"COMMAND: {' '.join(sys.argv)}")
     
     
 

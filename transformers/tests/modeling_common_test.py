@@ -105,8 +105,11 @@ class CommonTestCases:
                 model = model_class(config=configs_no_init)
                 for name, param in model.named_parameters():
                     if param.requires_grad:
-                        self.assertIn(param.data.mean().item(), [0.0, 1.0],
-                        msg="Parameter {} of model {} seems not properly initialized".format(name, model_class))
+                        self.assertIn(
+                            param.data.mean().item(),
+                            [0.0, 1.0],
+                            msg=f"Parameter {name} of model {model_class} seems not properly initialized",
+                        )
 
         def test_determinism(self):
             config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
@@ -713,7 +716,7 @@ class ConfigTester(object):
 
     def create_and_test_config_to_json_file(self):
         config_first = self.config_class(**self.inputs_dict)
-        json_file_path = os.path.join(os.getcwd(), "config_" + str(uuid.uuid4()) + ".json")
+        json_file_path = os.path.join(os.getcwd(), f"config_{str(uuid.uuid4())}.json")
         config_first.to_json_file(json_file_path)
         config_second = self.config_class.from_json_file(json_file_path)
         os.remove(json_file_path)
@@ -737,10 +740,7 @@ def ids_tensor(shape, vocab_size, rng=None, name=None):
     for dim in shape:
         total_dims *= dim
 
-    values = []
-    for _ in range(total_dims):
-        values.append(rng.randint(0, vocab_size - 1))
-
+    values = [rng.randint(0, vocab_size - 1) for _ in range(total_dims)]
     return torch.tensor(data=values, dtype=torch.long).view(shape).contiguous()
 
 

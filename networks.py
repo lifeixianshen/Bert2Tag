@@ -19,7 +19,7 @@ class BertForSeqTagging(BertForTokenClassification):
         outputs = self.bert(input_ids=input_ids,
                             attention_mask=attention_mask)
         sequence_output = outputs[0]
-        
+
         batch_size, max_len, feature_dim = sequence_output.shape
         valid_output = torch.zeros(batch_size, max_len, feature_dim,
                                    dtype=torch.float32, device='cuda')
@@ -30,7 +30,7 @@ class BertForSeqTagging(BertForTokenClassification):
                 if valid_ids[i][j].item() == 1:
                     k += 1
                     valid_output[i][k] = sequence_output[i][j]
-                    
+
         sequence_output = self.dropout(valid_output)
         logits = self.classifier(sequence_output)
 
@@ -40,8 +40,7 @@ class BertForSeqTagging(BertForTokenClassification):
         if labels is not None:
             loss_fct = CrossEntropyLoss()
             active_labels = labels.view(-1)[active_loss]
-            loss = loss_fct(active_logits, active_labels)
-            return loss
+            return loss_fct(active_logits, active_labels)
         else:
             return active_logits
             

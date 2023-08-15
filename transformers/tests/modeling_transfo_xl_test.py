@@ -115,13 +115,12 @@ class TransfoXLModelTest(CommonTestCases.CommonModelTester):
 
             hidden_states_1, mems_1 = model(input_ids_1)
             hidden_states_2, mems_2 = model(input_ids_2, mems_1)
-            outputs = {
+            return {
                 "hidden_states_1": hidden_states_1,
                 "mems_1": mems_1,
                 "hidden_states_2": hidden_states_2,
                 "mems_2": mems_2,
             }
-            return outputs
 
         def check_transfo_xl_model_output(self, result):
             self.parent.assertListEqual(
@@ -131,11 +130,15 @@ class TransfoXLModelTest(CommonTestCases.CommonModelTester):
                 list(result["hidden_states_2"].size()),
                 [self.batch_size, self.seq_length, self.hidden_size])
             self.parent.assertListEqual(
-                list(list(mem.size()) for mem in result["mems_1"]),
-                [[self.mem_len, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.size()) for mem in result["mems_1"]],
+                [[self.mem_len, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
             self.parent.assertListEqual(
-                list(list(mem.size()) for mem in result["mems_2"]),
-                [[self.mem_len, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.size()) for mem in result["mems_2"]],
+                [[self.mem_len, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
 
 
         def create_transfo_xl_lm_head(self, config, input_ids_1, input_ids_2, lm_labels):
@@ -147,7 +150,7 @@ class TransfoXLModelTest(CommonTestCases.CommonModelTester):
             lm_logits_2, mems_2 = model(input_ids_2, mems=mems_1)
             loss_2, _, mems_2 = model(input_ids_2, labels=lm_labels, mems=mems_1)
 
-            outputs = {
+            return {
                 "loss_1": loss_1,
                 "mems_1": mems_1,
                 "lm_logits_1": lm_logits_1,
@@ -155,7 +158,6 @@ class TransfoXLModelTest(CommonTestCases.CommonModelTester):
                 "mems_2": mems_2,
                 "lm_logits_2": lm_logits_2,
             }
-            return outputs
 
         def check_transfo_xl_lm_head_output(self, result):
             self.parent.assertListEqual(
@@ -165,8 +167,10 @@ class TransfoXLModelTest(CommonTestCases.CommonModelTester):
                 list(result["lm_logits_1"].size()),
                 [self.batch_size, self.seq_length, self.vocab_size])
             self.parent.assertListEqual(
-                list(list(mem.size()) for mem in result["mems_1"]),
-                [[self.mem_len, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.size()) for mem in result["mems_1"]],
+                [[self.mem_len, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
 
             self.parent.assertListEqual(
                 list(result["loss_2"].size()),
@@ -175,8 +179,10 @@ class TransfoXLModelTest(CommonTestCases.CommonModelTester):
                 list(result["lm_logits_2"].size()),
                 [self.batch_size, self.seq_length, self.vocab_size])
             self.parent.assertListEqual(
-                list(list(mem.size()) for mem in result["mems_2"]),
-                [[self.mem_len, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.size()) for mem in result["mems_2"]],
+                [[self.mem_len, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
 
         def prepare_config_and_inputs_for_common(self):
             config_and_inputs = self.prepare_config_and_inputs()

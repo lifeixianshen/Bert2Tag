@@ -43,7 +43,7 @@ class CTRLTokenizationTest(CommonTestCases.CommonTokenizerTester):
             fp.write("\n".join(merges))
 
     def get_tokenizer(self, **kwargs):
-        kwargs.update(self.special_tokens_map)
+        kwargs |= self.special_tokens_map
         return CTRLTokenizer.from_pretrained(self.tmpdirname, **kwargs)
 
     def get_input_output_texts(self):

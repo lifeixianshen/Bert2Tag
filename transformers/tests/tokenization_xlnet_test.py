@@ -54,10 +54,32 @@ class XLNetTokenizationTest(CommonTestCases.CommonTokenizerTester):
             tokenizer.convert_tokens_to_ids(tokens), [285, 46, 10, 170, 382])
 
         tokens = tokenizer.tokenize(u"I was born in 92000, and this is falsé.")
-        self.assertListEqual(tokens, [SPIECE_UNDERLINE + u'I', SPIECE_UNDERLINE + u'was', SPIECE_UNDERLINE + u'b',
-                                    u'or', u'n', SPIECE_UNDERLINE + u'in', SPIECE_UNDERLINE + u'',
-                                    u'9', u'2', u'0', u'0', u'0', u',', SPIECE_UNDERLINE + u'and', SPIECE_UNDERLINE + u'this',
-                                    SPIECE_UNDERLINE + u'is', SPIECE_UNDERLINE + u'f', u'al', u's', u'é', u'.'])
+        self.assertListEqual(
+            tokens,
+            [
+                f'{SPIECE_UNDERLINE}I',
+                f'{SPIECE_UNDERLINE}was',
+                f'{SPIECE_UNDERLINE}b',
+                u'or',
+                u'n',
+                f'{SPIECE_UNDERLINE}in',
+                f'{SPIECE_UNDERLINE}',
+                u'9',
+                u'2',
+                u'0',
+                u'0',
+                u'0',
+                u',',
+                f'{SPIECE_UNDERLINE}and',
+                f'{SPIECE_UNDERLINE}this',
+                f'{SPIECE_UNDERLINE}is',
+                f'{SPIECE_UNDERLINE}f',
+                u'al',
+                u's',
+                u'é',
+                u'.',
+            ],
+        )
         ids = tokenizer.convert_tokens_to_ids(tokens)
         self.assertListEqual(
             ids, [8, 21, 84, 55, 24, 19, 7, 0,
@@ -65,29 +87,92 @@ class XLNetTokenizationTest(CommonTestCases.CommonTokenizerTester):
                 46, 72, 80, 6, 0, 4])
 
         back_tokens = tokenizer.convert_ids_to_tokens(ids)
-        self.assertListEqual(back_tokens, [SPIECE_UNDERLINE + u'I', SPIECE_UNDERLINE + u'was', SPIECE_UNDERLINE + u'b',
-                                        u'or', u'n', SPIECE_UNDERLINE + u'in',
-                                        SPIECE_UNDERLINE + u'', u'<unk>', u'2', u'0', u'0', u'0', u',',
-                                        SPIECE_UNDERLINE + u'and', SPIECE_UNDERLINE + u'this',
-                                        SPIECE_UNDERLINE + u'is', SPIECE_UNDERLINE + u'f', u'al', u's',
-                                        u'<unk>', u'.'])
+        self.assertListEqual(
+            back_tokens,
+            [
+                f'{SPIECE_UNDERLINE}I',
+                f'{SPIECE_UNDERLINE}was',
+                f'{SPIECE_UNDERLINE}b',
+                u'or',
+                u'n',
+                f'{SPIECE_UNDERLINE}in',
+                f'{SPIECE_UNDERLINE}',
+                u'<unk>',
+                u'2',
+                u'0',
+                u'0',
+                u'0',
+                u',',
+                f'{SPIECE_UNDERLINE}and',
+                f'{SPIECE_UNDERLINE}this',
+                f'{SPIECE_UNDERLINE}is',
+                f'{SPIECE_UNDERLINE}f',
+                u'al',
+                u's',
+                u'<unk>',
+                u'.',
+            ],
+        )
 
     def test_tokenizer_lower(self):
         tokenizer = XLNetTokenizer(SAMPLE_VOCAB, do_lower_case=True)
         tokens = tokenizer.tokenize(u"I was born in 92000, and this is falsé.")
-        self.assertListEqual(tokens, [SPIECE_UNDERLINE + u'', u'i', SPIECE_UNDERLINE + u'was', SPIECE_UNDERLINE + u'b',
-                                      u'or', u'n', SPIECE_UNDERLINE + u'in', SPIECE_UNDERLINE + u'',
-                                      u'9', u'2', u'0', u'0', u'0', u',', SPIECE_UNDERLINE + u'and', SPIECE_UNDERLINE + u'this',
-                                      SPIECE_UNDERLINE + u'is', SPIECE_UNDERLINE + u'f', u'al', u'se', u'.'])
+        self.assertListEqual(
+            tokens,
+            [
+                f'{SPIECE_UNDERLINE}',
+                u'i',
+                f'{SPIECE_UNDERLINE}was',
+                f'{SPIECE_UNDERLINE}b',
+                u'or',
+                u'n',
+                f'{SPIECE_UNDERLINE}in',
+                f'{SPIECE_UNDERLINE}',
+                u'9',
+                u'2',
+                u'0',
+                u'0',
+                u'0',
+                u',',
+                f'{SPIECE_UNDERLINE}and',
+                f'{SPIECE_UNDERLINE}this',
+                f'{SPIECE_UNDERLINE}is',
+                f'{SPIECE_UNDERLINE}f',
+                u'al',
+                u'se',
+                u'.',
+            ],
+        )
         self.assertListEqual(tokenizer.tokenize(u"H\u00E9llo"), [u"▁he", u"ll", u"o"])
 
     def test_tokenizer_no_lower(self):
         tokenizer = XLNetTokenizer(SAMPLE_VOCAB, do_lower_case=False)
         tokens = tokenizer.tokenize(u"I was born in 92000, and this is falsé.")
-        self.assertListEqual(tokens, [SPIECE_UNDERLINE + u'I', SPIECE_UNDERLINE + u'was', SPIECE_UNDERLINE + u'b', u'or',
-                                      u'n', SPIECE_UNDERLINE + u'in', SPIECE_UNDERLINE + u'',
-                                      u'9', u'2', u'0', u'0', u'0', u',', SPIECE_UNDERLINE + u'and', SPIECE_UNDERLINE + u'this',
-                                      SPIECE_UNDERLINE + u'is', SPIECE_UNDERLINE + u'f', u'al', u'se', u'.'])
+        self.assertListEqual(
+            tokens,
+            [
+                f'{SPIECE_UNDERLINE}I',
+                f'{SPIECE_UNDERLINE}was',
+                f'{SPIECE_UNDERLINE}b',
+                u'or',
+                u'n',
+                f'{SPIECE_UNDERLINE}in',
+                f'{SPIECE_UNDERLINE}',
+                u'9',
+                u'2',
+                u'0',
+                u'0',
+                u'0',
+                u',',
+                f'{SPIECE_UNDERLINE}and',
+                f'{SPIECE_UNDERLINE}this',
+                f'{SPIECE_UNDERLINE}is',
+                f'{SPIECE_UNDERLINE}f',
+                u'al',
+                u'se',
+                u'.',
+            ],
+        )
 
     def test_sequence_builders(self):
         tokenizer = XLNetTokenizer.from_pretrained("xlnet-base-cased")

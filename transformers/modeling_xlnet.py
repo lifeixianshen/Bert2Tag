@@ -58,36 +58,46 @@ def build_tf_xlnet_to_pytorch_map(model, config, tf_weights=None):
             # We will load also the sequence summary
             tf_to_pt_map['model/sequnece_summary/summary/kernel'] = model.sequence_summary.summary.weight
             tf_to_pt_map['model/sequnece_summary/summary/bias'] = model.sequence_summary.summary.bias
-        if hasattr(model, 'logits_proj') and config.finetuning_task is not None \
-                and 'model/regression_{}/logit/kernel'.format(config.finetuning_task) in tf_weights:
-            tf_to_pt_map['model/regression_{}/logit/kernel'.format(config.finetuning_task)] = model.logits_proj.weight
-            tf_to_pt_map['model/regression_{}/logit/bias'.format(config.finetuning_task)] = model.logits_proj.bias
+        if (
+            hasattr(model, 'logits_proj')
+            and config.finetuning_task is not None
+            and f'model/regression_{config.finetuning_task}/logit/kernel'
+            in tf_weights
+        ):
+            tf_to_pt_map[
+                f'model/regression_{config.finetuning_task}/logit/kernel'
+            ] = model.logits_proj.weight
+            tf_to_pt_map[
+                f'model/regression_{config.finetuning_task}/logit/bias'
+            ] = model.logits_proj.bias
 
         # Now load the rest of the transformer
         model = model.transformer
 
     # Embeddings and output
-    tf_to_pt_map.update({'model/transformer/word_embedding/lookup_table': model.word_embedding.weight,
-                         'model/transformer/mask_emb/mask_emb': model.mask_emb})
+    tf_to_pt_map |= {
+        'model/transformer/word_embedding/lookup_table': model.word_embedding.weight,
+        'model/transformer/mask_emb/mask_emb': model.mask_emb,
+    }
 
     # Transformer blocks
     for i, b in enumerate(model.layer):
         layer_str = "model/transformer/layer_%d/" % i
-        tf_to_pt_map.update({
-            layer_str + "rel_attn/LayerNorm/gamma": b.rel_attn.layer_norm.weight,
-            layer_str + "rel_attn/LayerNorm/beta": b.rel_attn.layer_norm.bias,
-            layer_str + "rel_attn/o/kernel": b.rel_attn.o,
-            layer_str + "rel_attn/q/kernel": b.rel_attn.q,
-            layer_str + "rel_attn/k/kernel": b.rel_attn.k,
-            layer_str + "rel_attn/r/kernel": b.rel_attn.r,
-            layer_str + "rel_attn/v/kernel": b.rel_attn.v,
-            layer_str + "ff/LayerNorm/gamma": b.ff.layer_norm.weight,
-            layer_str + "ff/LayerNorm/beta": b.ff.layer_norm.bias,
-            layer_str + "ff/layer_1/kernel": b.ff.layer_1.weight,
-            layer_str + "ff/layer_1/bias": b.ff.layer_1.bias,
-            layer_str + "ff/layer_2/kernel": b.ff.layer_2.weight,
-            layer_str + "ff/layer_2/bias": b.ff.layer_2.bias,
-        })
+        tf_to_pt_map |= {
+            f"{layer_str}rel_attn/LayerNorm/gamma": b.rel_attn.layer_norm.weight,
+            f"{layer_str}rel_attn/LayerNorm/beta": b.rel_attn.layer_norm.bias,
+            f"{layer_str}rel_attn/o/kernel": b.rel_attn.o,
+            f"{layer_str}rel_attn/q/kernel": b.rel_attn.q,
+            f"{layer_str}rel_attn/k/kernel": b.rel_attn.k,
+            f"{layer_str}rel_attn/r/kernel": b.rel_attn.r,
+            f"{layer_str}rel_attn/v/kernel": b.rel_attn.v,
+            f"{layer_str}ff/LayerNorm/gamma": b.ff.layer_norm.weight,
+            f"{layer_str}ff/LayerNorm/beta": b.ff.layer_norm.bias,
+            f"{layer_str}ff/layer_1/kernel": b.ff.layer_1.weight,
+            f"{layer_str}ff/layer_1/bias": b.ff.layer_1.bias,
+            f"{layer_str}ff/layer_2/kernel": b.ff.layer_2.weight,
+            f"{layer_str}ff/layer_2/bias": b.ff.layer_2.bias,
+        }
 
     # Relative positioning biases
     if config.untie_r:
@@ -126,7 +136,7 @@ def load_tf_weights_in_xlnet(model, config, tf_path):
     init_vars = tf.train.list_variables(tf_path)
     tf_weights = {}
     for name, shape in init_vars:
-        logger.info("Loading TF weight {} with shape {}".format(name, shape))
+        logger.info(f"Loading TF weight {name} with shape {shape}")
         array = tf.train.load_variable(tf_path, name)
         tf_weights[name] = array
 
@@ -134,9 +144,9 @@ def load_tf_weights_in_xlnet(model, config, tf_path):
     tf_to_pt_map = build_tf_xlnet_to_pytorch_map(model, config, tf_weights)
 
     for name, pointer in tf_to_pt_map.items():
-        logger.info("Importing {}".format(name))
+        logger.info(f"Importing {name}")
         if name not in tf_weights:
-            logger.info("{} not in tf pre-trained weights, skipping".format(name))
+            logger.info(f"{name} not in tf pre-trained weights, skipping")
             continue
         array = tf_weights[name]
         # adam_v and adam_m are variables used in AdamWeightDecayOptimizer to calculated m and v
@@ -154,7 +164,7 @@ def load_tf_weights_in_xlnet(model, config, tf_path):
                 except AssertionError as e:
                     e.args += (p_i.shape, arr_i.shape)
                     raise
-                logger.info("Initialize PyTorch weight {} for layer {}".format(name, i))
+                logger.info(f"Initialize PyTorch weight {name} for layer {i}")
                 p_i.data = torch.from_numpy(arr_i)
         else:
             try:
@@ -162,13 +172,15 @@ def load_tf_weights_in_xlnet(model, config, tf_path):
             except AssertionError as e:
                 e.args += (pointer.shape, array.shape)
                 raise
-            logger.info("Initialize PyTorch weight {}".format(name))
+            logger.info(f"Initialize PyTorch weight {name}")
             pointer.data = torch.from_numpy(array)
         tf_weights.pop(name, None)
-        tf_weights.pop(name + '/Adam', None)
-        tf_weights.pop(name + '/Adam_1', None)
+        tf_weights.pop(f'{name}/Adam', None)
+        tf_weights.pop(f'{name}/Adam_1', None)
 
-    logger.info("Weights not copied to PyTorch model: {}".format(', '.join(tf_weights.keys())))
+    logger.info(
+        f"Weights not copied to PyTorch model: {', '.join(tf_weights.keys())}"
+    )
     return model
 
 
@@ -301,9 +313,7 @@ class XLNetRelativeAttention(nn.Module):
         attn_out = self.dropout(attn_out)
         if residual:
             attn_out = attn_out + h
-        output = self.layer_norm(attn_out)
-
-        return output
+        return self.layer_norm(attn_out)
 
     def forward(self, h, g,
                       attn_mask_h, attn_mask_g,
@@ -312,11 +322,7 @@ class XLNetRelativeAttention(nn.Module):
         if g is not None:
             ###### Two-stream attention with relative positional encoding.
             # content based attention score
-            if mems is not None and mems.dim() > 1:
-                cat = torch.cat([mems, h], dim=0)
-            else:
-                cat = h
-
+            cat = torch.cat([mems, h], dim=0) if mems is not None and mems.dim() > 1 else h
             # content-based key head
             k_head_h = torch.einsum('ibh,hnd->ibnd', cat, self.k)
 
@@ -369,11 +375,7 @@ class XLNetRelativeAttention(nn.Module):
 
         else:
             ###### Multi-head attention with relative positional encoding
-            if mems is not None and mems.dim() > 1:
-                cat = torch.cat([mems, h], dim=0)
-            else:
-                cat = h
-
+            cat = torch.cat([mems, h], dim=0) if mems is not None and mems.dim() > 1 else h
             # content heads
             q_head_h = torch.einsum('ibh,hnd->ibnd', h, self.q)
             k_head_h = torch.einsum('ibh,hnd->ibnd', cat, self.k)
@@ -683,7 +685,7 @@ class XLNetModel(XLNetPreTrainedModel):
             # beg, end = klen - 1, -1
             beg, end = klen, -1
         else:
-            raise ValueError('Unknown `attn_type` {}.'.format(self.attn_type))
+            raise ValueError(f'Unknown `attn_type` {self.attn_type}.')
 
         if self.bi_data:
             fwd_pos_seq = torch.arange(beg, end, -1.0, dtype=torch.float)
@@ -737,7 +739,7 @@ class XLNetModel(XLNetPreTrainedModel):
         elif self.attn_type == 'bi':
             attn_mask = None
         else:
-            raise ValueError('Unsupported attention type: {}'.format(self.attn_type))
+            raise ValueError(f'Unsupported attention type: {self.attn_type}')
 
         # data mask: input mask & perm mask
         assert input_mask is None or attention_mask is None, "You can only use one of input_mask (uses 1 for padding) "
@@ -746,9 +748,9 @@ class XLNetModel(XLNetPreTrainedModel):
             input_mask = 1.0 - attention_mask
         if input_mask is not None and perm_mask is not None:
             data_mask = input_mask[None] + perm_mask
-        elif input_mask is not None and perm_mask is None:
+        elif input_mask is not None:
             data_mask = input_mask[None]
-        elif input_mask is None and perm_mask is not None:
+        elif perm_mask is not None:
             data_mask = perm_mask
         else:
             data_mask = None
@@ -1334,7 +1336,7 @@ class XLNetForQuestionAnswering(XLNetPreTrainedModel):
                 # note(zhiliny): by default multiply the loss by 0.5 so that the scale is comparable to start_loss and end_loss
                 total_loss += cls_loss * 0.5
 
-            outputs = (total_loss,) + outputs
+            return (total_loss,) + outputs
 
         else:
             # during inference, compute the end logits based on beam search
@@ -1358,8 +1360,10 @@ class XLNetForQuestionAnswering(XLNetPreTrainedModel):
             start_states = torch.einsum("blh,bl->bh", hidden_states, start_log_probs)  # get the representation of START as weighted sum of hidden states
             cls_logits = self.answer_class(hidden_states, start_states=start_states, cls_index=cls_index)  # Shape (batch size,): one single `cls_logits` for each sample
 
-            outputs = (start_top_log_probs, start_top_index, end_top_log_probs, end_top_index, cls_logits) + outputs
-
-        # return start_top_log_probs, start_top_index, end_top_log_probs, end_top_index, cls_logits
-        # or (if labels are provided) (total_loss,)
-        return outputs
+            return (
+                start_top_log_probs,
+                start_top_index,
+                end_top_log_probs,
+                end_top_index,
+                cls_logits,
+            ) + outputs

@@ -119,6 +119,6 @@ class AutoTokenizer(object):
             return XLMTokenizer.from_pretrained(pretrained_model_name_or_path, *inputs, **kwargs)
         elif 'ctrl' in pretrained_model_name_or_path:
             return CTRLTokenizer.from_pretrained(pretrained_model_name_or_path, *inputs, **kwargs)
-        raise ValueError("Unrecognized model identifier in {}. Should contains one of "
-                         "'bert', 'openai-gpt', 'gpt2', 'transfo-xl', 'xlnet', "
-                         "'xlm', 'roberta', 'ctrl'".format(pretrained_model_name_or_path))
+        raise ValueError(
+            f"Unrecognized model identifier in {pretrained_model_name_or_path}. Should contains one of 'bert', 'openai-gpt', 'gpt2', 'transfo-xl', 'xlnet', 'xlm', 'roberta', 'ctrl'"
+        )

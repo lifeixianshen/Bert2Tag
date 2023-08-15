@@ -35,13 +35,27 @@ class KeyphraseSpanExtraction(object):
 
         # Prepare optimizer and schedule (linear warmup and decay)
         no_decay = ['bias', 'LayerNorm.weight'] # no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
-        
+
         param_optimizer = list(self.network.named_parameters())
         optimizer_grouped_parameters = [
-            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)], 'weight_decay': self.args.weight_decay},
-            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+            {
+                'params': [
+                    p
+                    for n, p in param_optimizer
+                    if all(nd not in n for nd in no_decay)
+                ],
+                'weight_decay': self.args.weight_decay,
+            },
+            {
+                'params': [
+                    p
+                    for n, p in param_optimizer
+                    if any(nd in n for nd in no_decay)
+                ],
+                'weight_decay': 0.0,
+            },
         ]
-        
+
         self.optimizer = AdamW(optimizer_grouped_parameters, lr=self.args.learning_rate, correct_bias=False)
         self.scheduler = WarmupLinearSchedule(self.optimizer, warmup_steps=num_warmup_steps, t_total=num_total_steps)
         
@@ -141,16 +155,16 @@ class KeyphraseSpanExtraction(object):
             
     @staticmethod
     def load_checkpoint(filename, new_args=None):
-        logger.info('Loading model %s' % filename)
+        logger.info(f'Loading model {filename}')
         saved_params = torch.load(filename, map_location=lambda storage, loc:storage)
-        
+
         args = saved_params['args']
         epoch = saved_params['epoch']
         state_dict = saved_params['state_dict']
-        
+
         if new_args:
             args = override_args(args, new_args)
-            
+
         model = KeyphraseSpanExtraction(args, state_dict)
         logger.info('success loaded epoch_%d checkpoints !' % epoch)
         return model

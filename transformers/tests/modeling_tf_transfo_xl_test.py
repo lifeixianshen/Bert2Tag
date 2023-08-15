@@ -135,11 +135,15 @@ class TFTransfoXLModelTest(TFCommonTestCases.TFCommonModelTester):
                 list(result["hidden_states_2"].shape),
                 [self.batch_size, self.seq_length, self.hidden_size])
             self.parent.assertListEqual(
-                list(list(mem.shape) for mem in result["mems_1"]),
-                [[self.mem_len, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.shape) for mem in result["mems_1"]],
+                [[self.mem_len, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
             self.parent.assertListEqual(
-                list(list(mem.shape) for mem in result["mems_2"]),
-                [[self.mem_len, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.shape) for mem in result["mems_2"]],
+                [[self.mem_len, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
 
 
         def create_and_check_transfo_xl_lm_head(self, config, input_ids_1, input_ids_2, lm_labels):
@@ -170,15 +174,19 @@ class TFTransfoXLModelTest(TFCommonTestCases.TFCommonModelTester):
                 list(result["lm_logits_1"].shape),
                 [self.batch_size, self.seq_length, self.vocab_size])
             self.parent.assertListEqual(
-                list(list(mem.shape) for mem in result["mems_1"]),
-                [[self.mem_len, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.shape) for mem in result["mems_1"]],
+                [[self.mem_len, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
 
             self.parent.assertListEqual(
                 list(result["lm_logits_2"].shape),
                 [self.batch_size, self.seq_length, self.vocab_size])
             self.parent.assertListEqual(
-                list(list(mem.shape) for mem in result["mems_2"]),
-                [[self.mem_len, self.batch_size, self.hidden_size]] * self.num_hidden_layers)
+                [list(mem.shape) for mem in result["mems_2"]],
+                [[self.mem_len, self.batch_size, self.hidden_size]]
+                * self.num_hidden_layers,
+            )
 
         def prepare_config_and_inputs_for_common(self):
             config_and_inputs = self.prepare_config_and_inputs()
